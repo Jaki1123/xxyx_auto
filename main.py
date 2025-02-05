@@ -8,6 +8,7 @@ import pyautogui
 import cv2
 import numpy as np
 import win32gui
+import win32api
 import win32con
 
 # 设置全局参数，游戏框大小
@@ -271,7 +272,7 @@ def wujingshilian():
 
 if __name__ == '__main__':
     # 初始化开启小小英雄。优化项：忽略图片大小进行匹配
-    init_xxyx_inwindows()
+    # init_xxyx_inwindows()
     # pyautogui.moveTo(394, 45)
 #     Part 1 初始化菜单栏
 #     init_menu()
@@ -280,3 +281,15 @@ if __name__ == '__main__':
     # Part 3 组队副本
     # result1 = find_and_move_sift(r"./img\zuduifuben.png",(0, 0, xxyx_weight, xxyx_hight))
     # pyautogui.moveTo(442, 810)
+
+    xxyx = gw.getWindowsWithTitle("MuMu模拟器12")
+    hwnd = xxyx[0]._hWnd  # 获取窗口句柄
+    left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+    click_x = left + 100
+    click_y = top + 100
+
+    # 发送鼠标点击消息（后台点击）
+    win32api.SendMessage(hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, click_x | (click_y << 16))
+    win32api.SendMessage(hwnd, win32con.WM_LBUTTONUP, None, click_x | (click_y << 16))
+
+
