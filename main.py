@@ -250,7 +250,7 @@ def init_menu(windows):
         find_menu = find_and_move_sift(r"./img\init_menu.png",
                                        (left, top, right, bottom))
         if find_menu is None:
-            print("没有初始栏，等待5s,游戏加载")
+            print("没有初始栏，等待5s加载")
             time.sleep(5)
         else:
             print("已回归至初始菜单栏")
