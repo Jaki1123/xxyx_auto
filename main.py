@@ -12,8 +12,6 @@ import win32api
 import win32con
 
 # 设置全局参数，游戏框大小
-xxyx_weight,xxyx_hight = 904, 1667
-
 def find_and_move_to_image(image_path, region):
     """
     在指定区域内查找图片，并移动鼠标到该位置
@@ -107,15 +105,17 @@ def find_and_click_sift(image_path, region):
         return None
 
     # 计算匹配点的重心（提高计算精度）
-    center_x = int(np.mean([kp2[m.trainIdx].pt[0] for m in good_matches])) + x
-    center_y = int(np.mean([kp2[m.trainIdx].pt[1] for m in good_matches])) + y
+    center_x = int(np.mean([kp2[m.trainIdx].pt[0] for m in good_matches]))
+    center_y = int(np.mean([kp2[m.trainIdx].pt[1] for m in good_matches]))
+
+    click_x = center_x + x
+    click_y = center_y + y
 
     # 移动鼠标到目标位置
-    pyautogui.click(center_x, center_y)
+    pyautogui.click(click_x, click_y)
 
-    print(f"找到目标，移动鼠标到: ({center_x}, {center_y})")
-    return center_x, center_y
-
+    print(f"找到目标，移动鼠标到: ({click_x}, {click_y});对应于窗口位置：({center_x}, {center_y})")
+    return click_x, click_y
 
 def find_and_move_sift(image_path, region):
     """
@@ -164,19 +164,23 @@ def find_and_move_sift(image_path, region):
         return None
 
     # 计算匹配点的重心（提高计算精度）
-    center_x = int(np.mean([kp2[m.trainIdx].pt[0] for m in good_matches])) + x
-    center_y = int(np.mean([kp2[m.trainIdx].pt[1] for m in good_matches])) + y
+    center_x = int(np.mean([kp2[m.trainIdx].pt[0] for m in good_matches]))
+    center_y = int(np.mean([kp2[m.trainIdx].pt[1] for m in good_matches]))
+
+    click_x = center_x + x
+    click_y = center_y + y
 
     # 移动鼠标到目标位置
-    # pyautogui.moveTo(center_x, center_y, duration=0.5)
+    # pyautogui.click(click_x, click_y)
+    # pyautogui.moveTo(442, 810)
 
-    print(f"找到目标: ({center_x}, {center_y})")
-    return center_x, center_y
+    print(f"找到目标，于界面位置: ({click_x}, {click_y});对应于窗口位置：({center_x}, {center_y})")
+    return click_x, click_y
 
 def init_xxyx_inwindows():
     """
     从MuMu模拟器初始化小小英雄
-    :return:
+    :return:返回窗口对象xxyx
     """
     # Step1:初始化小小英雄
     windows = gw.getAllTitles()
@@ -184,27 +188,25 @@ def init_xxyx_inwindows():
     if gw.getWindowsWithTitle("MuMu模拟器12"):
         print("MuMu模拟器12已开启")
         xxyx = gw.getWindowsWithTitle("MuMu模拟器12")[0]
-        xxyx.resizeTo(1600, 1000)
         # 设置窗口为顶置窗口
         win32gui.SetWindowPos(xxyx._hWnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+        left, top, right, bottom = win32gui.GetWindowRect(xxyx._hWnd)
         print("初始化游戏配置")
-        find_and_click_sift(r"./img\mumu_xxyx_img.png", (xxyx.left, xxyx.top, xxyx.width, xxyx.height))
-        xxyx.resizeTo(xxyx_weight,xxyx_hight)
+        find_and_click_sift(r"./img\mumu_xxyx_img.png", (left, top, right, bottom))
         time.sleep(0.5)
         xxyx.moveTo(0, 0)
+        print("小小英雄已启动")
     else:
         print("MuMu模拟器12未开启，现在开始启动MuMu模拟器")
         # 打开Mumu模拟器
         subprocess.Popen(r"D:\Program Files\Netease\MuMu Player 12\shell\MuMuPlayer.exe")
-        print("打开Mumu模拟器")
+        print("正在打开Mumu模拟器")
         time.sleep(0.5) ##提供程序响应时间
         while True:
             if gw.getWindowsWithTitle("MuMu模拟器12"):
-                print("找到MuMu模拟器进程，开始调整大小至1600:1000")
+                print("找到MuMu模拟器进程")
                 xxyx = gw.getWindowsWithTitle("MuMu模拟器12")[0]
                 win32gui.SetWindowPos(xxyx._hWnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-                # 设置窗口大小（宽, 高）
-                xxyx.resizeTo(1600, 1000)
                 # 设置窗口位置（左上角的 X, Y 坐标）
                 xxyx.moveTo(0, 0)
                 break
@@ -213,7 +215,8 @@ def init_xxyx_inwindows():
                 time.sleep(3)
 
         while True:
-            find_result = find_and_click_sift(r"./img\mumu_xxyx_img.png", (0, 0, 1600, 1000))
+            left, top, right, bottom = win32gui.GetWindowRect(xxyx._hWnd)
+            find_result = find_and_click_sift(r"./img\mumu_xxyx_img.png", (left, top, right, bottom))
             if find_result is not None:
                 time.sleep(0.5)
                 break
@@ -221,29 +224,36 @@ def init_xxyx_inwindows():
                 time.sleep(6)
         # 移动窗口：
         xxyx.moveTo(0, 0)
-        width, height = xxyx.width, xxyx.height
-        return width, height
+        return xxyx
 
 
 # 初始化菜单栏
-def init_menu():
+def init_menu(windows):
+    # 优化项：优先判断已经在内容界面，否则等待5次，并报错
+    left, top, right, bottom = win32gui.GetWindowRect(windows._hWnd)
     while True:
         find_return_button = find_and_move_sift(r"./img\return_button.png",
-                                               (0, 0, xxyx_weight, xxyx_hight))
+                                               (left, top, right, bottom))
         if find_return_button is not None:
-            print("未在初始菜单栏，有返回按钮,至初始菜单栏")
+            print("有返回按钮,移动至初始菜单栏")
             pyautogui.click(find_return_button)
             time.sleep(0.5)
 
-
         find_close_button = find_and_move_sift(r"./img\close_button.png",
-                                      (0, 0,xxyx_weight,xxyx_hight))
+                                      (left, top, right, bottom))
+
         if find_close_button is not None:
-            print("未在初始菜单栏，有关闭按钮,至初始菜单栏")
+            print("有关闭按钮,移动至初始菜单栏")
             pyautogui.click(find_close_button)
             time.sleep(0.5)
+
+        find_menu = find_and_move_sift(r"./img\init_menu.png",
+                                       (left, top, right, bottom))
+        if find_menu is None:
+            print("没有初始栏，等待5s,游戏加载")
+            time.sleep(5)
         else:
-            print("以回归至初始菜单栏")
+            print("已回归至初始菜单栏")
             break
     return True
 def wujingshilian():
@@ -271,25 +281,12 @@ def wujingshilian():
             time.sleep(2)
 
 if __name__ == '__main__':
-    # 初始化开启小小英雄。优化项：忽略图片大小进行匹配
-    # init_xxyx_inwindows()
-    # pyautogui.moveTo(394, 45)
+    # Step1.初始化开启小小英雄,并返回对象窗口
+    xxyx = init_xxyx_inwindows()
 #     Part 1 初始化菜单栏
-#     init_menu()
+    init_menu(xxyx)
 #     Part 2 开启无尽试炼
 #     wujingshilian()
     # Part 3 组队副本
     # result1 = find_and_move_sift(r"./img\zuduifuben.png",(0, 0, xxyx_weight, xxyx_hight))
-    # pyautogui.moveTo(442, 810)
-
-    xxyx = gw.getWindowsWithTitle("MuMu模拟器12")
-    hwnd = xxyx[0]._hWnd  # 获取窗口句柄
-    left, top, right, bottom = win32gui.GetWindowRect(hwnd)
-    click_x = left + 100
-    click_y = top + 100
-
-    # 发送鼠标点击消息（后台点击）
-    win32api.SendMessage(hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, click_x | (click_y << 16))
-    win32api.SendMessage(hwnd, win32con.WM_LBUTTONUP, None, click_x | (click_y << 16))
-
 
